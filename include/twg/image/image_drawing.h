@@ -1,0 +1,160 @@
+#pragma once
+
+#include <twg/image.h>
+#include <twg/image/image_agg.h>
+
+namespace twg
+{
+
+	class 	Pen;
+	class 	Brush;
+	class 	TextStyle;
+	enum 	TextFlag : int32u;
+	class 	Polygon_d;
+	class 	ImageDrawing;
+	class 	ImageDrawing_aa;
+	class 	ImageDrawing_win;
+
+	//-------------------------------------------------------------------------
+	class Pen
+	{
+	public:
+		Pen() : thick(1), clr(Black), img(nullptr) {}
+		Pen(double thick, Color clr) : thick(thick), clr(clr), img(nullptr) {};
+		Pen(double thick, ImageBase* img) : thick(thick), clr(Transparent), 
+			img(img) {};
+
+		double 		thick;
+		Color 		clr;
+		ImageBase*	img;
+	};
+
+	class Brush
+	{
+	public:
+		Brush() : clr(White), img(nullptr) {}
+		Brush(Color clr) : clr(clr), img(nullptr) {}
+		Brush(ImageBase* img) : clr(Transparent), img(img) {};
+
+		Color 		clr;
+		ImageBase*	img;
+	};
+
+	class TextStyle
+	{
+	public:
+		TextStyle() : width(12), name("Consolas"), flags(TextFlag(0)) {}
+		TextStyle(int32 width, std::string name, TextFlag flags) :
+			width(width), name(name), flags(flags) {};
+
+		int32			width;
+		std::string	name;
+		TextFlag 		flags;
+	};
+
+	enum TextFlag : int32u
+	{
+		TEXT_NONE		= 0,
+		TEXT_BOLD 		= 1,
+		TEXT_ITALIC 	= 2,
+		TEXT_UNDERLINE 	= 4,
+		TEXT_STRIKE 	= 8
+	};
+
+	//-------------------------------------------------------------------------
+	class Polygon_d
+	{
+	public:
+		Polygon_d() {}
+		Polygon_d(std::vector<Point_d> array) : array(array) {}
+
+		std::vector<Point_d> array;
+
+		Polygon_d& move(const Point_d& diff);
+		Polygon_d& rotate(const double& angle, const Point_d& center);
+		Polygon_d& scale(const Point_d& scale);
+		Polygon_d& toBasis(const Point_d& newOX, const Point_d& newOY);
+		Polygon_d& fromBasis(const Point_d& oldOX, const Point_d& oldOY);
+
+		Polygon_d& flipAxis(const Point_d& axis); // You can mirror coords by OX(1, 0)
+	};
+
+	Polygon_d computeEllipse(Point_d radius);
+	Polygon_d computeArc(double radius, 
+						 double startAngle,
+						 double endAngle);
+	Polygon_d computePie(double radius, 
+						 double startAngle,
+						 double endAngle);
+	Polygon_d computeRoundRect(Point_d size, // Border-radius:
+							   double rLU, // Left-Up
+							   double rRU, // Right-Up
+							   double rRD, // Right-Down
+							   double rLD); // Left-Down
+	Polygon_d computeRegularPolygon(int32u n, double radius);
+
+	//-------------------------------------------------------------------------
+	class ImageDrawing : virtual public ImageBase
+	{
+	public:
+		ImageDrawing(Point_i size) : ImageBase(size) {}
+
+		virtual ~ImageDrawing() {}
+
+		virtual void setPen(Pen pen) = 0;
+		virtual void setBrush(Brush brush) = 0;
+		virtual void setTextStyle(TextStyle style) = 0;
+
+			// Rectangular drawing
+		virtual void drawPTo(ImageBase* dst, Polygon_d rect) = 0; // ONLY 4 POINTS
+			// You can rotate, move, scale, and another transformations of points
+			// Рисует 
+
+		virtual Pen 		getPen(void) = 0;
+		virtual Brush 		getBrush(void) = 0;
+		virtual TextStyle 	getTextStyle(void) = 0;
+		virtual Point_d 	getTextSize(std::string text) = 0;
+
+		virtual void drawPolygon(Polygon_d& points) = 0;
+		virtual void drawPolyline(Polygon_d& points, bool isRoundJoin = false) = 0;
+		virtual void drawLine(Point_d a, Point_d b) = 0;
+
+		virtual void drawText(Point_d pos, std::string text) = 0;
+	protected:
+		Pen 		m_pen;
+		Brush 		m_brush;
+		TextStyle 	m_textStyle;
+	};
+
+	class ImageDrawing_aa : public ImageDrawing, public ImageAgg
+	{
+	public:
+		ImageDrawing_aa(Point_i size);
+		ImageDrawing_aa(ImageBase* img);
+		virtual ~ImageDrawing_aa();
+
+		void setPen(Pen pen);
+		void setBrush(Brush brush);
+		void setTextStyle(TextStyle style);
+
+		void drawPTo(ImageBase* dst, Polygon_d rect);
+
+		Pen 		getPen(void);
+		Brush 		getBrush(void);
+		TextStyle 	getTextStyle(void);
+		Point_d 	getTextSize(std::string text);
+
+		void drawPolygon(Polygon_d& points);
+		void drawPolyline(Polygon_d& points, bool isRoundJoin = false);
+		void drawLine(Point_d a, Point_d b);
+
+		void drawText(Point_d pos, std::string text);
+
+		using ImageAgg::resize;
+	private:
+		TextStyle 	m_text;
+		Pen 		m_pen;
+		Brush 		m_brush;
+	};
+	
+}
