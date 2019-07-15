@@ -80,7 +80,7 @@ void ImageBase::copyTo(ImageBase *dst,
 	assert(srcStart.x == 0 && srcStart.y == 0);
 	assert(srcSize.x == width() && srcSize.y == height());
 	for (int32u i = 0; i < m_width*m_height; ++i)
-		dst->m_buf[i] = dst->m_buf[i];
+		dst->m_buf[i] = m_buf[i];
 }
 
 //-----------------------------------------------------------------------------
