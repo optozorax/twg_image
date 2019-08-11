@@ -99,6 +99,25 @@ void ImageBase::drawTo(ImageBase* dst,
 }
 
 //-----------------------------------------------------------------------------
+std::shared_ptr<uint8_t> ImageBase::getSharedRawData(bool isWithAlpha) const {
+	int bytes = isWithAlpha ? 4 : 3;
+	std::shared_ptr<uint8_t> data(new uint8_t[width() * height() * bytes], [](uint8_t* p) { delete[] p; });
+	for (int i = 0; i < height(); i++) {
+		for (int j = 0; j < width(); j++) {
+			int offset = bytes*(i * width() + j);
+			auto clr = operator[](Point_i(j, i));
+			data.get()[offset + 0] = getRed(clr);
+			data.get()[offset + 1] = getGreen(clr);
+			data.get()[offset + 2] = getBlue(clr);
+
+			if (isWithAlpha)
+				data.get()[offset + 3] = getAlpha(clr);
+		}
+	}
+	return data;
+}
+
+//-----------------------------------------------------------------------------
 void loadFromBmp(ImageBase* img, std::string fileName) {
 	BMP AnImage;
 	AnImage.ReadFromFile(wstr2str(fileName).c_str());
@@ -190,20 +209,10 @@ void loadFromPngJpg(ImageBase* img, std::string fileName) {
 
 //-----------------------------------------------------------------------------
 void saveToPng(ImageBase* img, std::string fileName, bool is32bitPng) {
-	unsigned char *data = new unsigned char[img->width() * img->height() * 4];
-	for (int i = 0; i < img->height(); i++) {
-		for (int j = 0; j < img->width(); j++) {
-			int offset = 4*(i * img->width() + j);
-			auto clr = (*img)[Point_i(j, i)];
-			data[offset + 0] = getRed(clr);
-			data[offset + 1] = getGreen(clr);
-			data[offset + 2] = getBlue(clr);
-			data[offset + 3] = getAlpha(clr);
-		}
-	}
+	auto data = img->getSharedRawData(is32bitPng);
+	int bytes = is32bitPng ? 4 : 3;
 	stbi_write_png_compression_level = 1;
-	stbi_write_png(wstr2str(fileName).c_str(), img->width(), img->height(), 4, data, img->width() * 4);
-	delete[] data;
+	stbi_write_png(wstr2str(fileName).c_str(), img->width(), img->height(), bytes, data.get(), img->width() * bytes);
 }
 
 //-----------------------------------------------------------------------------

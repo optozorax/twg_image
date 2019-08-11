@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include <twg/basics.h>
 #include <twg/point.h>
@@ -47,6 +48,8 @@ namespace twg
 					Point_i srcStart,
 					Point_i srcSize,
 					Point_i dstSize) const;
+
+		std::shared_ptr<uint8_t> getSharedRawData(bool isWithAlpha = false) const;
 	protected:
 		ImageBase* 	m_assigned;
 		Color*		m_buf;
